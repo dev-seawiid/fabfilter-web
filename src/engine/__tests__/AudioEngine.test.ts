@@ -36,9 +36,14 @@ describe("AudioEngine", () => {
       expect(engine.graphNodes.filter.type).toBe("highpass");
     });
 
-    it("Filter 노드의 기본 주파수가 20Hz이다", () => {
+    it("Filter 노드의 기본 주파수가 0Hz (필터 비활성)이다", () => {
       const engine = new AudioEngine();
-      expect(engine.graphNodes.filter.frequency.value).toBe(20);
+      expect(engine.graphNodes.filter.frequency.value).toBe(0);
+    });
+
+    it("Filter 노드의 기본 Q가 Butterworth(0.707)이다", () => {
+      const engine = new AudioEngine();
+      expect(engine.graphNodes.filter.Q.value).toBeCloseTo(Math.SQRT1_2);
     });
 
     it("Gain 노드의 기본 값이 1이다", () => {

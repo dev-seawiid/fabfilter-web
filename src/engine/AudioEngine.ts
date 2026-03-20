@@ -1,6 +1,6 @@
-import type { AudioGraphNodes, EngineConfig } from "./types";
 import type { AudioFileMetadata } from "@/types/audio";
 import { FilterEngine } from "./FilterEngine";
+import type { AudioGraphNodes, EngineConfig } from "./types";
 
 const DEFAULT_CONFIG: EngineConfig = {
   fftSize: 2048,
@@ -36,7 +36,8 @@ export class AudioEngine {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = "highpass";
-    filter.frequency.value = 20;
+    filter.frequency.value = 0;
+    filter.Q.value = Math.SQRT1_2; // 0.707 — Butterworth (maximally flat)
 
     const gain = this.ctx.createGain();
     gain.gain.value = 1;

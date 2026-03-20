@@ -1,10 +1,10 @@
-import { create } from "zustand";
-import type {
-  PlaybackState,
-  FilterParams,
-  AudioFileMetadata,
-} from "@/types/audio";
 import { AudioEngine } from "@/engine/AudioEngine";
+import type {
+  AudioFileMetadata,
+  FilterParams,
+  PlaybackState,
+} from "@/types/audio";
+import { create } from "zustand";
 
 /** 오디오 스토어 상태 — Constitution II: Single Source of Truth */
 export interface AudioState {
@@ -31,6 +31,7 @@ export interface AudioActions {
 
   // ── Filter Actions ──
   setCutoff: (hz: number) => void;
+  setQ: (value: number) => void;
   setGain: (value: number) => void;
 
   // ── Engine Access (읽기 전용) ──
@@ -48,7 +49,8 @@ const initialState: AudioState = {
   error: null,
   fileMetadata: null,
   filterParams: {
-    cutoffHz: 20,
+    cutoffHz: 0,
+    q: Math.SQRT1_2, // 0.707 — Butterworth (maximally flat)
     gain: 1,
   },
 };
@@ -159,10 +161,19 @@ export const useAudioStore = create<AudioStore>()((set, get) => ({
 
   setCutoff: (hz: number) => {
     const eng = getOrCreateEngine();
-    const clamped = Math.max(20, Math.min(20000, hz));
+    const clamped = Math.max(0, Math.min(20000, hz));
     eng.filterEngine.setCutoff(clamped);
     set((state) => ({
       filterParams: { ...state.filterParams, cutoffHz: clamped },
+    }));
+  },
+
+  setQ: (value: number) => {
+    const eng = getOrCreateEngine();
+    const clamped = Math.max(0.1, Math.min(18, value));
+    eng.filterEngine.setQ(clamped);
+    set((state) => ({
+      filterParams: { ...state.filterParams, q: clamped },
     }));
   },
 

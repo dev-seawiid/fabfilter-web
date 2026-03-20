@@ -5,6 +5,8 @@ export type PlaybackState = "idle" | "loading" | "playing" | "stopped";
 export interface FilterParams {
   /** Cutoff 주파수 (Hz). 범위: 20–20,000 */
   cutoffHz: number;
+  /** Q (Resonance). 범위: 0.1–18. 기본값: 0.707 (Butterworth) */
+  q: number;
   /** 출력 게인. 범위: 0–1 */
   gain: number;
 }

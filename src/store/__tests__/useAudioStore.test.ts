@@ -13,7 +13,7 @@ const initialState = {
   isLoading: false,
   error: null,
   fileMetadata: null,
-  filterParams: { cutoffHz: 20, gain: 1 },
+  filterParams: { cutoffHz: 0, q: Math.SQRT1_2, gain: 1 },
 };
 
 describe("useAudioStore", () => {

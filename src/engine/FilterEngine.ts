@@ -21,7 +21,7 @@ export class FilterEngine {
 
   /** Cutoff 주파수 설정 (Hz). setTargetAtTime으로 스무딩 적용 */
   setCutoff(hz: number): void {
-    const clamped = Math.max(20, Math.min(20000, hz));
+    const clamped = Math.max(0, Math.min(20000, hz));
     this.filter.frequency.setTargetAtTime(
       clamped,
       this.ctx.currentTime,
