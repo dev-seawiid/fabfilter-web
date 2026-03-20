@@ -1,5 +1,6 @@
 import type { AudioGraphNodes, EngineConfig } from "./types";
 import type { AudioFileMetadata } from "@/types/audio";
+import { FilterEngine } from "./FilterEngine";
 
 const DEFAULT_CONFIG: EngineConfig = {
   fftSize: 2048,
@@ -23,6 +24,7 @@ export class AudioEngine {
   private isPlaying = false;
   private onEndedCallback: (() => void) | null = null;
   private config: EngineConfig;
+  private _filterEngine: FilterEngine | null = null;
 
   constructor(config: Partial<EngineConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -189,6 +191,30 @@ export class AudioEngine {
   /** 재생 완료 시 호출될 콜백 등록 */
   onEnded(callback: () => void): void {
     this.onEndedCallback = callback;
+  }
+
+  // ── Filter / Gain 제어 (T035, T036) ──
+
+  /** FilterEngine 인스턴스 — lazy init */
+  get filterEngine(): FilterEngine {
+    if (!this._filterEngine) {
+      this._filterEngine = new FilterEngine(
+        this.nodes.filter,
+        this.ctx,
+        this.config.smoothingTimeConstant,
+      );
+    }
+    return this._filterEngine;
+  }
+
+  /** Gain 값 설정 (0~1). setTargetAtTime으로 스무딩 적용 */
+  setGain(value: number): void {
+    const clamped = Math.max(0, Math.min(1, value));
+    this.nodes.gain.gain.setTargetAtTime(
+      clamped,
+      this.ctx.currentTime,
+      this.config.smoothingTimeConstant,
+    );
   }
 
   // ── 리소스 해제 ──

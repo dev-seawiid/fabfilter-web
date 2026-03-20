@@ -4,6 +4,7 @@ import { useAudioStore } from "@/store/useAudioStore";
 import FileUploader from "@/components/audio/FileUploader";
 import PlaybackControls from "@/components/audio/PlaybackControls";
 import Timeline from "@/components/audio/Timeline";
+import FilterControls from "@/components/audio/FilterControls";
 import { motion } from "framer-motion";
 
 export default function AppShell() {
@@ -53,6 +54,9 @@ export default function AppShell() {
             <div className="flex-1">
               <Timeline />
             </div>
+            {/* Filter 컨트롤 — 구분선 + 노브 */}
+            <div className="bg-surface-700/50 h-8 w-px" />
+            <FilterControls />
           </div>
         </div>
       </section>

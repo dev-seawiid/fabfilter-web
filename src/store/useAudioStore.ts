@@ -154,11 +154,21 @@ export const useAudioStore = create<AudioStore>()((set, get) => ({
     });
   },
 
-  // Filter actions — stub (Phase 4에서 구현)
-  setCutoff: () => {
-    // Phase 4에서 구현
+  setCutoff: (hz: number) => {
+    const eng = getOrCreateEngine();
+    const clamped = Math.max(20, Math.min(20000, hz));
+    eng.filterEngine.setCutoff(clamped);
+    set((state) => ({
+      filterParams: { ...state.filterParams, cutoffHz: clamped },
+    }));
   },
-  setGain: () => {
-    // Phase 4에서 구현
+
+  setGain: (value: number) => {
+    const eng = getOrCreateEngine();
+    const clamped = Math.max(0, Math.min(1, value));
+    eng.setGain(clamped);
+    set((state) => ({
+      filterParams: { ...state.filterParams, gain: clamped },
+    }));
   },
 }));
