@@ -1,6 +1,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { AnalyserBridge } from "@/engine/AnalyserBridge";
 import { applyEMA } from "@/utils/smoothing";
+import { feedPeak } from "@/hooks/usePeakDetector";
 import { useAudioStore } from "@/store/useAudioStore";
 import { useAnimationFrame } from "./useAnimationFrame";
 
@@ -79,10 +80,15 @@ export function useSpectrumData(): SpectrumData | null {
     applyEMA(raw.pre, smoothedPre, SMOOTHING_ALPHA);
     applyEMA(raw.post, smoothedPost, SMOOTHING_ALPHA);
 
+    const postPeak = bridge.getPostPeak();
+
+    // PeakLED 외부 스토어에 직접 피드 — PeakLED가 useSpectrumData를 구독할 필요 없음
+    feedPeak(postPeak);
+
     spectrumSnapshot = {
       preData: smoothedPre,
       postData: smoothedPost,
-      postPeak: bridge.getPostPeak(),
+      postPeak,
       binCount: bridge.frequencyBinCount,
       sampleRate: bridge.sampleRate,
     };

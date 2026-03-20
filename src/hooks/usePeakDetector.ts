@@ -1,5 +1,4 @@
 import { useEffect, useSyncExternalStore } from "react";
-import type { SpectrumData } from "./useSpectrumData";
 
 const PEAK_THRESHOLD = 1.0;
 const RESET_DELAY_MS = 2000;
@@ -13,12 +12,12 @@ function emit() {
   for (const l of listeners) l();
 }
 
-function subscribe(listener: () => void) {
+export function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-function getSnapshot() {
+export function getSnapshot() {
   return isClipping;
 }
 
@@ -36,17 +35,23 @@ export function feedPeak(peak: number): void {
   }
 }
 
+/** 재생 중지 시 클리핑 상태 리셋 */
+export function resetPeakState(): void {
+  isClipping = false;
+  clearTimeout(resetTimer);
+  emit();
+}
+
 /**
- * usePeakDetector — spectrumData를 받아 피크 감지.
- * PeakLED 컴포넌트에서 사용한다.
+ * usePeakDetector — postPeak 값을 직접 받아 클리핑을 감지한다.
+ * useSpectrumData를 직접 호출하지 않아 리스너 중복 방지.
  */
-export function usePeakDetector(spectrumData: SpectrumData | null): boolean {
-  // spectrumData가 변할 때마다 피크 체크 — effect에서 외부 스토어 업데이트
+export function usePeakDetector(postPeak: number | undefined): boolean {
   useEffect(() => {
-    if (spectrumData) {
-      feedPeak(spectrumData.postPeak);
+    if (postPeak !== undefined) {
+      feedPeak(postPeak);
     }
-  }, [spectrumData]);
+  }, [postPeak]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

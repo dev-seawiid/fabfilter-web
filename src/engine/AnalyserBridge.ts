@@ -11,6 +11,7 @@ export class AnalyserBridge {
   private analyserPost: AnalyserNode;
   private preBuffer: Float32Array<ArrayBuffer>;
   private postBuffer: Float32Array<ArrayBuffer>;
+  private timeDomainBuffer: Float32Array<ArrayBuffer>;
 
   constructor(analyserPre: AnalyserNode, analyserPost: AnalyserNode) {
     this.analyserPre = analyserPre;
@@ -19,6 +20,8 @@ export class AnalyserBridge {
     // frequencyBinCount = fftSize / 2
     this.preBuffer = new Float32Array(analyserPre.frequencyBinCount);
     this.postBuffer = new Float32Array(analyserPost.frequencyBinCount);
+    // 피크 검출용 — fftSize 크기 (매 프레임 할당 방지)
+    this.timeDomainBuffer = new Float32Array(analyserPost.fftSize);
   }
 
   /** Pre-EQ 주파수 데이터 (dB 단위) */
@@ -43,12 +46,13 @@ export class AnalyserBridge {
 
   /** Post-EQ 시간 도메인 데이터에서 피크 검출 (PeakLED용) */
   getPostPeak(): number {
-    const timeData: Float32Array<ArrayBuffer> = new Float32Array(this.analyserPost.fftSize);
-    this.analyserPost.getFloatTimeDomainData(timeData);
+    this.analyserPost.getFloatTimeDomainData(this.timeDomainBuffer);
 
     let peak = 0;
-    for (let i = 0; i < timeData.length; i++) {
-      const abs = Math.abs(timeData[i]);
+    const buf = this.timeDomainBuffer;
+    const len = buf.length;
+    for (let i = 0; i < len; i++) {
+      const abs = Math.abs(buf[i]);
       if (abs > peak) peak = abs;
     }
     return peak;

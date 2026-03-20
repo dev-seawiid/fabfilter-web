@@ -1,16 +1,27 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSpectrumData } from "@/hooks/useSpectrumData";
-import { usePeakDetector } from "@/hooks/usePeakDetector";
+
+// ── PeakLED 외부 스토어 (usePeakDetector에서 feedPeak으로 업데이트됨) ──
+// usePeakDetector의 외부 스토어를 직접 구독하여 useSpectrumData 이중 호출 방지
+
+import {
+  subscribe as peakSubscribe,
+  getSnapshot as peakGetSnapshot,
+} from "@/hooks/usePeakDetector";
 
 /**
  * PeakLED — Post-EQ 신호가 0dB를 초과하면 빨간 LED가 점등된다.
- * 자동으로 2초 후 리셋된다.
+ * useSpectrumData의 rAF 콜백에서 feedPeak()으로 직접 피드되므로
+ * 이 컴포넌트는 별도 구독 없이 클리핑 boolean만 감지한다.
  */
 export default function PeakLED() {
-  const spectrumData = useSpectrumData();
-  const isClipping = usePeakDetector(spectrumData);
+  const isClipping = useSyncExternalStore(
+    peakSubscribe,
+    peakGetSnapshot,
+    peakGetSnapshot,
+  );
 
   return (
     <div className="flex flex-col items-center gap-1">

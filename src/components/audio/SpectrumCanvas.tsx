@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { useSpectrumData } from "@/hooks/useSpectrumData";
 import { useAudioStore } from "@/store/useAudioStore";
 import {
@@ -33,6 +33,81 @@ const FREQ_ARRAY = createLogFrequencyArray(MIN_HZ, MAX_HZ, 256);
 const GRID_FREQUENCIES = [50, 100, 200, 500, 1000, 2000, 5000, 10000];
 const GRID_DB_VALUES = [-80, -60, -40, -20];
 
+// ── 모듈 레벨 드로잉 헬퍼 (외부 의존성 없음) ──
+
+/** 스펙트럼 곡선 드로잉 */
+function drawSpectrum(
+  ctx: CanvasRenderingContext2D,
+  data: Float32Array,
+  binCount: number,
+  sampleRate: number,
+  width: number,
+  height: number,
+  strokeColor: string,
+  fillColor: string,
+) {
+  ctx.beginPath();
+  let started = false;
+
+  for (let i = 1; i < binCount; i++) {
+    const hz = binToHz(i, sampleRate, binCount * 2);
+    if (hz < MIN_HZ || hz > MAX_HZ) continue;
+
+    const x = hzToLogX(hz, width, MIN_HZ, MAX_HZ);
+    const y = dbToY(data[i], height, MIN_DB, MAX_DB);
+
+    if (!started) {
+      ctx.moveTo(x, y);
+      started = true;
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.lineTo(width, height);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+}
+
+/** 배경 그리드 드로잉 */
+function drawGrid(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+) {
+  ctx.strokeStyle = GRID_COLOR;
+  ctx.lineWidth = 0.5;
+  ctx.font = "9px monospace";
+  ctx.fillStyle = LABEL_COLOR;
+
+  for (const hz of GRID_FREQUENCIES) {
+    const x = hzToLogX(hz, width, MIN_HZ, MAX_HZ);
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+
+    const label = hz >= 1000 ? `${hz / 1000}k` : `${hz}`;
+    ctx.fillText(label, x + 3, height - 4);
+  }
+
+  for (const db of GRID_DB_VALUES) {
+    const y = dbToY(db, height, MIN_DB, MAX_DB);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+
+    ctx.fillText(`${db}dB`, 3, y - 3);
+  }
+}
+
 export default function SpectrumCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const spectrumData = useSpectrumData();
@@ -40,118 +115,6 @@ export default function SpectrumCanvas() {
   const playbackState = useAudioStore((s) => s.playbackState);
 
   const isActive = playbackState === "playing";
-
-  /** 스펙트럼 곡선을 그리는 헬퍼 */
-  const drawSpectrum = useCallback(
-    (
-      ctx: CanvasRenderingContext2D,
-      data: Float32Array,
-      binCount: number,
-      sampleRate: number,
-      width: number,
-      height: number,
-      strokeColor: string,
-      fillColor: string,
-    ) => {
-      ctx.beginPath();
-      let started = false;
-
-      for (let i = 1; i < binCount; i++) {
-        const hz = binToHz(i, sampleRate, binCount * 2);
-        if (hz < MIN_HZ || hz > MAX_HZ) continue;
-
-        const x = hzToLogX(hz, width, MIN_HZ, MAX_HZ);
-        const y = dbToY(data[i], height, MIN_DB, MAX_DB);
-
-        if (!started) {
-          ctx.moveTo(x, y);
-          started = true;
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-
-      // 채우기 — 곡선 아래를 닫고 채움
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // fill path (close bottom)
-      ctx.lineTo(width, height);
-      ctx.lineTo(0, height);
-      ctx.closePath();
-      ctx.fillStyle = fillColor;
-      ctx.fill();
-    },
-    [],
-  );
-
-  /** 필터 응답 곡선 (Layer 2) */
-  const drawFilterCurve = useCallback(
-    (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      const engine = getEngine();
-      const { magResponse } =
-        engine.filterEngine.getFrequencyResponse(FREQ_ARRAY);
-
-      ctx.beginPath();
-      for (let i = 0; i < FREQ_ARRAY.length; i++) {
-        const x = hzToLogX(FREQ_ARRAY[i], width, MIN_HZ, MAX_HZ);
-        // magResponse는 선형 배율 → dB 변환
-        const db = 20 * Math.log10(Math.max(1e-10, magResponse[i]));
-        const y = dbToY(db, height, MIN_DB, MAX_DB);
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-
-      ctx.strokeStyle = FILTER_CURVE_COLOR;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // fill under curve
-      ctx.lineTo(width, height);
-      ctx.lineTo(0, height);
-      ctx.closePath();
-      ctx.fillStyle = FILTER_CURVE_FILL;
-      ctx.fill();
-    },
-    [getEngine],
-  );
-
-  /** 배경 그리드 */
-  const drawGrid = useCallback(
-    (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      ctx.strokeStyle = GRID_COLOR;
-      ctx.lineWidth = 0.5;
-      ctx.font = "9px monospace";
-      ctx.fillStyle = LABEL_COLOR;
-
-      // 주파수 세로 선
-      for (const hz of GRID_FREQUENCIES) {
-        const x = hzToLogX(hz, width, MIN_HZ, MAX_HZ);
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-
-        // 라벨
-        const label = hz >= 1000 ? `${hz / 1000}k` : `${hz}`;
-        ctx.fillText(label, x + 3, height - 4);
-      }
-
-      // dB 가로 선
-      for (const db of GRID_DB_VALUES) {
-        const y = dbToY(db, height, MIN_DB, MAX_DB);
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-
-        ctx.fillText(`${db}dB`, 3, y - 3);
-      }
-    },
-    [],
-  );
 
   // Canvas 렌더 루프
   useEffect(() => {
@@ -163,7 +126,6 @@ export default function SpectrumCanvas() {
 
     const { width, height } = canvas;
 
-    // 클리어
     ctx.clearRect(0, 0, width, height);
 
     // 배경 그리드
@@ -183,9 +145,31 @@ export default function SpectrumCanvas() {
     );
     ctx.restore();
 
-    // Layer 2: Filter response curve
+    // Layer 2: Filter response curve (getEngine 의존 — effect 내부에서 호출)
     ctx.save();
-    drawFilterCurve(ctx, width, height);
+    const engine = getEngine();
+    const { magResponse } =
+      engine.filterEngine.getFrequencyResponse(FREQ_ARRAY);
+
+    ctx.beginPath();
+    for (let i = 0; i < FREQ_ARRAY.length; i++) {
+      const x = hzToLogX(FREQ_ARRAY[i], width, MIN_HZ, MAX_HZ);
+      const db = 20 * Math.log10(Math.max(1e-10, magResponse[i]));
+      const y = dbToY(db, height, MIN_DB, MAX_DB);
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    ctx.strokeStyle = FILTER_CURVE_COLOR;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.lineTo(width, height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fillStyle = FILTER_CURVE_FILL;
+    ctx.fill();
     ctx.restore();
 
     // Layer 3: Post-EQ spectrum (primary)
@@ -201,7 +185,7 @@ export default function SpectrumCanvas() {
       POST_FILL,
     );
     ctx.restore();
-  }, [spectrumData, isActive, drawSpectrum, drawFilterCurve, drawGrid]);
+  }, [spectrumData, isActive, getEngine]);
 
   // Canvas 리사이즈 핸들링
   const containerRef = useRef<HTMLDivElement>(null);
