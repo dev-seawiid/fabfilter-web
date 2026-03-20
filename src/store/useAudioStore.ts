@@ -55,6 +55,11 @@ const initialState: AudioState = {
 /** 싱글턴 AudioEngine 인스턴스 — 스토어 외부에서 관리 */
 let engine: AudioEngine | null = null;
 
+/** 테스트 전용 — 엔진 싱글턴 리셋 */
+export function __resetEngineForTesting(): void {
+  engine = null;
+}
+
 function getOrCreateEngine(): AudioEngine {
   if (!engine) {
     engine = new AudioEngine();

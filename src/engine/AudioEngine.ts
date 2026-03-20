@@ -136,8 +136,10 @@ export class AudioEngine {
   stop(): void {
     if (!this.isPlaying || !this.nodes.source) return;
 
-    this.isPlaying = false;
+    // getCurrentTime()은 isPlaying=true일 때만 경과 시간을 계산하므로
+    // 반드시 isPlaying을 false로 바꾸기 전에 호출해야 한다
     this.startOffset = this.getCurrentTime();
+    this.isPlaying = false;
 
     // onended가 stop에 의해 트리거되지 않도록 콜백 제거 후 stop
     this.nodes.source.onended = null;

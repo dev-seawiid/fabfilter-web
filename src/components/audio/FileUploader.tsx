@@ -139,7 +139,7 @@ export default function FileUploader() {
             : "var(--color-surface-600)",
           backgroundColor: isDragOver
             ? "rgba(0, 229, 255, 0.04)"
-            : "transparent",
+            : "rgba(0, 0, 0, 0)",
         }}
         transition={{ duration: 0.15 }}
         className="border-surface-600 hover:border-surface-500 relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-8 py-12 transition-colors"
