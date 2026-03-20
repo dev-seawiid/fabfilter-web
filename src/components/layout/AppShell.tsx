@@ -5,6 +5,8 @@ import FileUploader from "@/components/audio/FileUploader";
 import PlaybackControls from "@/components/audio/PlaybackControls";
 import Timeline from "@/components/audio/Timeline";
 import FilterControls from "@/components/audio/FilterControls";
+import SpectrumCanvas from "@/components/audio/SpectrumCanvas";
+import PeakLED from "@/components/ui/PeakLED";
 import { motion } from "framer-motion";
 
 export default function AppShell() {
@@ -22,7 +24,7 @@ export default function AppShell() {
         }}
       />
 
-      {/* ── 상단: Spectrum 영역 (Phase 4에서 Canvas 추가) ── */}
+      {/* ── 상단: Spectrum 영역 ── */}
       <section className="relative flex flex-1 items-center justify-center p-8">
         {!hasFile ? (
           <div className="w-full max-w-md">
@@ -32,13 +34,11 @@ export default function AppShell() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-2"
+            className="flex h-full w-full max-w-5xl flex-col gap-2"
           >
-            {/* Phase 4에서 SpectrumCanvas가 여기에 들어감 */}
-            <div className="border-surface-700/50 bg-surface-900/50 flex h-64 w-full max-w-3xl items-center justify-center rounded-lg border">
-              <p className="text-text-muted text-xs">
-                Spectrum visualization — Phase 4
-              </p>
+            {/* SpectrumCanvas — 3-layer 합성 */}
+            <div className="border-surface-700/30 bg-surface-900/30 flex-1 overflow-hidden rounded-lg border">
+              <SpectrumCanvas />
             </div>
           </motion.div>
         )}
@@ -57,6 +57,9 @@ export default function AppShell() {
             {/* Filter 컨트롤 — 구분선 + 노브 */}
             <div className="bg-surface-700/50 h-8 w-px" />
             <FilterControls />
+            {/* Peak LED */}
+            <div className="bg-surface-700/50 h-8 w-px" />
+            <PeakLED />
           </div>
         </div>
       </section>

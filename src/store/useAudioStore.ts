@@ -35,6 +35,7 @@ export interface AudioActions {
 
   // ── Engine Access (읽기 전용) ──
   getPlaybackInfo: () => { currentTime: number; duration: number };
+  getEngine: () => AudioEngine;
 }
 
 export type AudioStore = AudioState & AudioActions;
@@ -77,6 +78,8 @@ function getOrCreateEngine(): AudioEngine {
 
 export const useAudioStore = create<AudioStore>()((set, get) => ({
   ...initialState,
+
+  getEngine: () => getOrCreateEngine(),
 
   /** 읽기 전용 — 엔진의 현재 재생 정보만 노출 (Constitution II 준수) */
   getPlaybackInfo: () => {
