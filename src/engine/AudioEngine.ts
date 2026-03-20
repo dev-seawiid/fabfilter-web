@@ -230,6 +230,7 @@ export class AudioEngine {
 
     this.buffer = null;
     this.onEndedCallback = null;
+    this._filterEngine = null;
 
     await this.ctx.close();
   }

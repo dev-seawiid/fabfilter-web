@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef } from "react";
+import { useId, useRef } from "react";
 import { motion } from "framer-motion";
 
 export interface KnobProps {
@@ -80,8 +80,9 @@ function polarToCartesian(
   const svgAngle = angleDeg - 90;
   const rad = deg2rad(svgAngle);
   return {
-    x: cx + r * Math.cos(rad),
-    y: cy + r * Math.sin(rad),
+    // rendering-svg-precision: 소수점 1자리로 제한 — SVG 문자열 크기 절감
+    x: Math.round((cx + r * Math.cos(rad)) * 10) / 10,
+    y: Math.round((cy + r * Math.sin(rad)) * 10) / 10,
   };
 }
 
@@ -145,27 +146,39 @@ export default function Knob({
   const indEnd = polarToCartesian(cx, cy, indicatorOuterR, knobAngle);
   const indStart = polarToCartesian(cx, cy, indicatorInnerR, knobAngle);
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      dragStartY.current = e.clientY;
-      dragStartNorm.current = normalized;
-    },
-    [normalized],
-  );
+  // React Compiler가 자동 메모이제이션 — 수동 useCallback 불필요
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragStartY.current = e.clientY;
+    dragStartNorm.current = normalized;
+  };
 
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!e.buttons) return;
-      // 200px 드래그 = 전체 범위
-      const delta = (dragStartY.current - e.clientY) / 200;
-      const newNorm = Math.max(0, Math.min(1, dragStartNorm.current + delta));
-      const newValue = normalizedToValue(newNorm, min, max, logarithmic);
-      onChange(newValue);
-    },
-    [min, max, logarithmic, onChange],
-  );
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!e.buttons) return;
+    // 200px 드래그 = 전체 범위
+    const delta = (dragStartY.current - e.clientY) / 200;
+    const newNorm = Math.max(0, Math.min(1, dragStartNorm.current + delta));
+    const newValue = normalizedToValue(newNorm, min, max, logarithmic);
+    onChange(newValue);
+  };
+
+  // 키보드: 화살표 키로 1% 단위 조절, Shift+화살표로 10% 단위
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 0.1 : 0.01;
+    let newNorm = normalized;
+
+    if (e.key === "ArrowUp" || e.key === "ArrowRight") {
+      newNorm = Math.min(1, normalized + step);
+    } else if (e.key === "ArrowDown" || e.key === "ArrowLeft") {
+      newNorm = Math.max(0, normalized - step);
+    } else {
+      return;
+    }
+
+    e.preventDefault();
+    onChange(normalizedToValue(newNorm, min, max, logarithmic));
+  };
 
   const displayValue = formatValue
     ? formatValue(value)
@@ -183,6 +196,14 @@ export default function Knob({
         style={{ cursor: "grab", overflow: "visible" }}
         whileHover="hover"
         whileTap={{ cursor: "grabbing" }}
+        role="slider"
+        aria-label={label}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-valuetext={displayValue}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
       >
         <defs>
           {/* 노브 본체 3D 그라데이션 */}

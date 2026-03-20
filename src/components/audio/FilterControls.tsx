@@ -11,6 +11,10 @@ function formatHz(hz: number): string {
   return `${Math.round(hz)}`;
 }
 
+// 모듈 레벨 상수 — 매 render마다 새 함수 생성 방지 (rerender-memo-with-default-value)
+const formatCutoff = (v: number) => `${formatHz(v)}Hz`;
+const formatGain = (v: number) => `${Math.round(v * 100)}%`;
+
 export default function FilterControls() {
   const cutoffHz = useAudioStore((s) => s.filterParams.cutoffHz);
   const gain = useAudioStore((s) => s.filterParams.gain);
@@ -34,7 +38,7 @@ export default function FilterControls() {
         max={20000}
         onChange={setCutoff}
         label="Cutoff"
-        formatValue={(v) => `${formatHz(v)}Hz`}
+        formatValue={formatCutoff}
         logarithmic
         size={44}
       />
@@ -46,7 +50,7 @@ export default function FilterControls() {
         max={1}
         onChange={setGain}
         label="Gain"
-        formatValue={(v) => `${Math.round(v * 100)}%`}
+        formatValue={formatGain}
         size={44}
       />
     </div>
