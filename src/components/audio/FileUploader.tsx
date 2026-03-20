@@ -6,6 +6,55 @@ import { useAudioStore } from "@/store/useAudioStore";
 
 const ACCEPTED_FORMATS = "audio/wav,audio/mpeg,audio/flac,audio/*";
 
+const uploadIcon = (
+  <svg
+    width="32"
+    height="32"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    className="text-text-muted"
+  >
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const spinnerIcon = (
+  <div className="text-accent-cyan animate-spin">
+    <svg width="32" height="32" viewBox="0 0 32 32">
+      <circle
+        cx="16"
+        cy="16"
+        r="12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeDasharray="60 20"
+        strokeLinecap="round"
+      />
+    </svg>
+  </div>
+);
+
+const compactUploadIcon = (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    className="text-text-secondary group-hover:text-accent-cyan transition-colors"
+  >
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
 export default function FileUploader() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -61,19 +110,7 @@ export default function FileUploader() {
           onClick={() => inputRef.current?.click()}
           className="group border-surface-600 bg-surface-800 hover:border-accent-cyan/40 hover:bg-surface-700 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="text-text-secondary group-hover:text-accent-cyan transition-colors"
-          >
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
+          {compactUploadIcon}
           <span className="text-text-secondary group-hover:text-text-primary">
             {fileMetadata.name}
           </span>
@@ -116,24 +153,7 @@ export default function FileUploader() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center gap-3"
             >
-              {/* 로딩 스피너 */}
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 32 32"
-                className="text-accent-cyan animate-spin"
-              >
-                <circle
-                  cx="16"
-                  cy="16"
-                  r="12"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeDasharray="60 20"
-                  strokeLinecap="round"
-                />
-              </svg>
+              {spinnerIcon}
               <span className="text-text-secondary text-xs">Decoding...</span>
             </motion.div>
           ) : (
@@ -144,20 +164,7 @@ export default function FileUploader() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center gap-3"
             >
-              {/* 업로드 아이콘 */}
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="text-text-muted"
-              >
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
+              {uploadIcon}
               <div className="text-center">
                 <p className="text-text-secondary text-sm">
                   Drop audio file or{" "}

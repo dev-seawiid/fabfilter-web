@@ -3,6 +3,31 @@
 import { motion } from "framer-motion";
 import { useAudioStore } from "@/store/useAudioStore";
 
+const pauseIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="text-accent-cyan"
+  >
+    <rect x="6" y="4" width="4" height="16" rx="1" />
+    <rect x="14" y="4" width="4" height="16" rx="1" />
+  </svg>
+);
+
+const playIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="text-text-secondary group-hover:text-accent-cyan ml-0.5 transition-colors"
+  >
+    <polygon points="6,4 20,12 6,20" />
+  </svg>
+);
+
 export default function PlaybackControls() {
   const playbackState = useAudioStore((s) => s.playbackState);
   const play = useAudioStore((s) => s.play);
@@ -43,30 +68,7 @@ export default function PlaybackControls() {
           />
         )}
 
-        {isPlaying ? (
-          // Pause 아이콘
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="text-accent-cyan"
-          >
-            <rect x="6" y="4" width="4" height="16" rx="1" />
-            <rect x="14" y="4" width="4" height="16" rx="1" />
-          </svg>
-        ) : (
-          // Play 아이콘
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="text-text-secondary group-hover:text-accent-cyan ml-0.5 transition-colors"
-          >
-            <polygon points="6,4 20,12 6,20" />
-          </svg>
-        )}
+        {isPlaying ? pauseIcon : playIcon}
       </motion.button>
     </div>
   );

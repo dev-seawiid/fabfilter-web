@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useCallback } from "react";
-import { motion } from "framer-motion";
 import { useAudioStore } from "@/store/useAudioStore";
 import { useAnimationFrame } from "@/hooks/useAnimationFrame";
 
@@ -14,22 +13,49 @@ function formatTime(seconds: number): string {
 
 export default function Timeline() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
+  const currentTimeRef = useRef<HTMLSpanElement>(null);
 
   const playbackState = useAudioStore((s) => s.playbackState);
-  const currentTime = useAudioStore((s) => s.currentTime);
   const duration = useAudioStore((s) => s.duration);
   const seek = useAudioStore((s) => s.seek);
-  const updateCurrentTime = useAudioStore((s) => s.updateCurrentTime);
+  const getPlaybackInfo = useAudioStore((s) => s.getPlaybackInfo);
 
   const isActive = playbackState !== "idle" && playbackState !== "loading";
-  const progress = duration > 0 ? currentTime / duration : 0;
+  const isPlaying = playbackState === "playing";
 
-  // 60fps Playhead 동기화 — AudioContext.currentTime 기반
+  // 60fps Playhead 동기화 — ref 기반 직접 DOM 업데이트 (re-render 0회)
   useAnimationFrame(() => {
-    updateCurrentTime();
-  }, playbackState === "playing");
+    const { currentTime: time, duration: d } = getPlaybackInfo();
+    const pct = d > 0 ? (time / d) * 100 : 0;
 
-  // 클릭/드래그로 seek
+    if (progressRef.current) {
+      progressRef.current.style.width = `${pct}%`;
+    }
+    if (playheadRef.current) {
+      playheadRef.current.style.left = `calc(${pct}% - 6px)`;
+    }
+    if (currentTimeRef.current) {
+      currentTimeRef.current.textContent = formatTime(time);
+    }
+  }, isPlaying);
+
+  // seek 시 즉시 DOM 반영
+  const syncDOM = useCallback(
+    (time: number) => {
+      const pct = duration > 0 ? (time / duration) * 100 : 0;
+      if (progressRef.current) progressRef.current.style.width = `${pct}%`;
+      if (playheadRef.current)
+        playheadRef.current.style.left = `calc(${pct}% - 6px)`;
+      if (currentTimeRef.current)
+        currentTimeRef.current.textContent = formatTime(time);
+    },
+    [duration],
+  );
+
+  // 클릭으로 seek
   const handleSeek = useCallback(
     (e: React.MouseEvent) => {
       if (!trackRef.current || !isActive) return;
@@ -38,16 +64,21 @@ export default function Timeline() {
         0,
         Math.min(1, (e.clientX - rect.left) / rect.width),
       );
-      seek(ratio * duration);
+      const time = ratio * duration;
+      seek(time);
+      syncDOM(time);
     },
-    [isActive, duration, seek],
+    [isActive, duration, seek, syncDOM],
   );
 
   return (
     <div className="flex items-center gap-3">
       {/* 현재 시간 */}
-      <span className="text-text-secondary w-12 text-right text-xs tabular-nums">
-        {formatTime(currentTime)}
+      <span
+        ref={currentTimeRef}
+        className="text-text-secondary w-12 text-right text-xs tabular-nums"
+      >
+        {formatTime(0)}
       </span>
 
       {/* 타임라인 트랙 */}
@@ -59,29 +90,29 @@ export default function Timeline() {
         }`}
       >
         {/* 진행 바 */}
-        <motion.div
+        <div
+          ref={progressRef}
           className="bg-accent-cyan absolute inset-y-0 left-0 rounded-full"
-          style={{ width: `${progress * 100}%` }}
-          transition={{ duration: 0, ease: "linear" }}
+          style={{ width: "0%" }}
         />
 
         {/* Playhead 핸들 */}
         {isActive && (
-          <motion.div
+          <div
+            ref={playheadRef}
             className="border-accent-cyan bg-surface-900 absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2"
-            style={{ left: `calc(${progress * 100}% - 6px)` }}
-            transition={{ duration: 0, ease: "linear" }}
+            style={{ left: "calc(0% - 6px)" }}
           >
             {/* 재생 중 글로우 */}
-            {playbackState === "playing" && (
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  boxShadow: "0 0 8px 2px rgba(0, 229, 255, 0.3)",
-                }}
-              />
-            )}
-          </motion.div>
+            <div
+              ref={glowRef}
+              className="absolute inset-0 rounded-full transition-opacity"
+              style={{
+                boxShadow: "0 0 8px 2px rgba(0, 229, 255, 0.3)",
+                opacity: isPlaying ? 1 : 0,
+              }}
+            />
+          </div>
         )}
       </div>
 

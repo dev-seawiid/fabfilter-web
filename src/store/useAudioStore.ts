@@ -24,18 +24,17 @@ export interface AudioState {
 export interface AudioActions {
   // ── Playback Actions ──
   loadFile: (file: File) => Promise<void>;
-  play: () => void;
+  play: () => Promise<void>;
   pause: () => void;
   seek: (time: number) => void;
   reset: () => void;
-  updateCurrentTime: () => void;
 
   // ── Filter Actions ──
   setCutoff: (hz: number) => void;
   setGain: (value: number) => void;
 
-  // ── Engine Access ──
-  getEngine: () => AudioEngine;
+  // ── Engine Access (읽기 전용) ──
+  getPlaybackInfo: () => { currentTime: number; duration: number };
 }
 
 export type AudioStore = AudioState & AudioActions;
@@ -74,7 +73,14 @@ function getOrCreateEngine(): AudioEngine {
 export const useAudioStore = create<AudioStore>()((set, get) => ({
   ...initialState,
 
-  getEngine: () => getOrCreateEngine(),
+  /** 읽기 전용 — 엔진의 현재 재생 정보만 노출 (Constitution II 준수) */
+  getPlaybackInfo: () => {
+    const eng = getOrCreateEngine();
+    return {
+      currentTime: eng.getCurrentTime(),
+      duration: eng.getDuration(),
+    };
+  },
 
   loadFile: async (file: File) => {
     const eng = getOrCreateEngine();
@@ -101,15 +107,20 @@ export const useAudioStore = create<AudioStore>()((set, get) => ({
     }
   },
 
-  play: () => {
+  play: async () => {
     const eng = getOrCreateEngine();
     const { playbackState } = get();
     if (playbackState !== "stopped") return;
 
-    eng.ensureResumed().then(() => {
+    try {
+      await eng.ensureResumed();
       eng.play();
       set({ playbackState: "playing" });
-    });
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Failed to resume audio context";
+      set({ error: message });
+    }
   },
 
   pause: () => {
@@ -136,14 +147,6 @@ export const useAudioStore = create<AudioStore>()((set, get) => ({
       playbackState: "stopped",
       currentTime: 0,
     });
-  },
-
-  /** useAnimationFrame에서 매 프레임 호출 — currentTime 동기화 */
-  updateCurrentTime: () => {
-    const eng = getOrCreateEngine();
-    if (eng.playing) {
-      set({ currentTime: eng.getCurrentTime() });
-    }
   },
 
   // Filter actions — stub (Phase 4에서 구현)
