@@ -61,6 +61,8 @@ export const motion = {
   a: createMotionComponent("a"),
   input: createMotionComponent("input"),
   svg: createMotionComponent("svg"),
+  path: createMotionComponent("path"),
+  circle: createMotionComponent("circle"),
 };
 
 export function AnimatePresence({ children }: { children: React.ReactNode }) {
