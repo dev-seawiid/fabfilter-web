@@ -155,12 +155,20 @@
 
 **Purpose**: 전체 스토리에 걸친 품질 개선, 접근성, 최종 검증
 
-- [ ] T058 [P] Keyboard accessibility — 모든 인터랙티브 요소(버튼, 노브, 타임라인)에 키보드 포커스 + `aria-label` 추가
-- [ ] T059 [P] Responsive layout tuning — AppShell의 모바일/태블릿 breakpoint 조정, Canvas 리사이즈 핸들링
-- [ ] T060 [P] Error boundary — `src/app/error.tsx` Next.js error boundary 추가, AudioEngine 예외 포착
-- [ ] T061 Performance audit — Lighthouse + Chrome DevTools Performance 탭으로 SC-004 최종 검증, 병목 발견 시 Canvas 최적화 (offscreen canvas, path caching)
-- [ ] T062 Cross-browser validation — Safari, Firefox에서 `AudioContext` 정책, Canvas 렌더링 확인
-- [ ] T063 Run full E2E suite — `e2e/playback.spec.ts` + `e2e/filter.spec.ts` + `e2e/visualization.spec.ts` + `e2e/performance.spec.ts` 전체 green 확인
+- [ ] T058 [P] Keyboard accessibility
+  - 전역 키보드 단축키 `src/hooks/useGlobalKeyboard.ts` — Space 재생/정지, ←/→ ±5초 seek, Shift+←/→ ±15초 seek. `window.addEventListener("keydown")` 패턴, INPUT/TEXTAREA/slider 포커스 시 무시
+  - Timeline `role="slider"` + `aria-valuemin/max/now/text` + `onKeyDown` + `tabIndex` 추가. `SEEK_STEP`/`SEEK_STEP_SHIFT` 상수를 useGlobalKeyboard와 공유
+  - SpectrumCanvas `role="img"` + `aria-label` 추가
+  - PeakLED `aria-label` 추가, `focus:outline-none` 제거
+  - 전역 `:focus-visible` 스타일 (`globals.css`) — 시안 링 + 글로우, React Flow 노드 제외
+- [ ] T059 [P] Responsive layout tuning — 그래프 패널 `h-[140px] sm:h-[180px]` 반응형 높이, Play 버튼 `h-11 w-11` (44px WCAG 터치 타겟)
+- [ ] T060 [P] Error boundary — `src/app/error.tsx` Next.js App Router error boundary, Fabfilter 스타일 에러 UI + `reset()` 재시도
+- [ ] T061 Performance audit — 기존 zero-allocation 패턴 검증 (AnalyserBridge 버퍼 재사용, Timeline/PeakLED ref 직접 DOM 업데이트), SC-004 E2E 통과
+- [ ] T061-R [P] Refactor: `src/utils/formatting.ts` 공통 유틸 추출 — `formatHz`, `gainToDb`, `formatDb`, `formatTime`. FilterControls, FilterNode, GainNodeDisplay, Timeline 중복 제거
+- [ ] T061-R [P] Refactor: SpectrumCanvas 드로잉 로직 분리 — `src/hooks/useSpectrumRenderer.ts` (273줄 → 62줄 컴포넌트 + 225줄 훅)
+- [ ] T062 Cross-browser validation — `AudioEngine.ts`에 `globalThis.AudioContext ?? webkitAudioContext` 폴백 (Safari 호환)
+- [ ] T063 Run full E2E suite — Vitest 13 files / 182 tests + Playwright 4 files / 26 tests = 총 208 tests green
+  - `e2e/playback.spec.ts` 셀렉터 수정: Phase 5 노드 그래프 추가로 `getByText("filename")`이 SourceNode와 FileUploader 두 곳에 매칭 → `getByRole("button", { name })` 패턴으로 전환, `.tabular-nums` → `.text-right.tabular-nums`로 구체화
 
 ---
 

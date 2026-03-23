@@ -6,6 +6,7 @@ import PlaybackControls from "@/components/audio/PlaybackControls";
 import SpectrumCanvas from "@/components/audio/SpectrumCanvas";
 import Timeline from "@/components/audio/Timeline";
 import PeakLED from "@/components/ui/PeakLED";
+import { useGlobalKeyboard } from "@/hooks/useGlobalKeyboard";
 import { useAudioStore } from "@/store/useAudioStore";
 import { AnimatePresence, motion } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -21,6 +22,7 @@ export default function AppShell() {
   const playbackState = useAudioStore((s) => s.playbackState);
   const hasFile = playbackState !== "idle" && playbackState !== "loading";
   const [graphOpen, setGraphOpen] = useState(true);
+  useGlobalKeyboard();
 
   return (
     <div className="bg-surface-950 relative flex h-screen flex-col overflow-hidden">
@@ -58,13 +60,13 @@ export default function AppShell() {
         {graphOpen && (
           <motion.section
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 180, opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="border-surface-700/30 bg-surface-900/50 relative shrink-0 overflow-hidden border-t backdrop-blur-sm"
           >
-            {/* React Flow는 부모에 명시적 CSS 크기가 필요 */}
-            <div className="h-[180px] w-full">
+            {/* 모바일: 140px, sm 이상: 180px — React Flow는 부모에 명시적 크기 필요 */}
+            <div className="h-[140px] w-full sm:h-[180px]">
               <AudioNodeGraph />
             </div>
           </motion.section>

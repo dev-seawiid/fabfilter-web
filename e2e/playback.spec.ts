@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
+import { expect, test } from "@playwright/test";
 import fs from "fs";
+import path from "path";
 
 // 테스트용 WAV 파일 생성 (지정 초, 44100Hz, 모노, 16bit)
 function createTestWavFile(outputPath: string, durationSec = 1): void {
@@ -45,9 +45,10 @@ async function uploadAndWait(
 ) {
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles(filePath);
-  await expect(page.getByText(path.basename(filePath))).toBeVisible({
-    timeout: 5000,
-  });
+  // 노드 그래프에도 파일명이 표시되므로 FileUploader 버튼으로 특정
+  await expect(
+    page.getByRole("button", { name: path.basename(filePath) }),
+  ).toBeVisible({ timeout: 5000 });
 }
 
 test.describe("Playback Flow", () => {
@@ -109,7 +110,7 @@ test.describe("Playback Flow", () => {
     await uploadAndWait(page, testAudio3sPath);
 
     // 초기 시간 0:00
-    const timeDisplay = page.locator(".tabular-nums").first();
+    const timeDisplay = page.locator(".text-right.tabular-nums").first();
     await expect(timeDisplay).toHaveText("0:00");
 
     // 타임라인 트랙 요소 — bg-surface-700 클래스의 진행 바 컨테이너
@@ -144,7 +145,7 @@ test.describe("Playback Flow", () => {
     });
 
     // 시간이 0:00으로 리셋
-    const timeDisplay = page.locator(".tabular-nums").first();
+    const timeDisplay = page.locator(".text-right.tabular-nums").first();
     await expect(timeDisplay).toHaveText("0:00");
   });
 
@@ -164,13 +165,13 @@ test.describe("Playback Flow", () => {
     // 재업로드 (1초 파일)
     const reuploadInput = page.locator('input[type="file"]').first();
     await reuploadInput.setInputFiles(testAudioPath);
-    await expect(page.getByText("test-audio.wav")).toBeVisible({
-      timeout: 5000,
-    });
+    await expect(
+      page.getByRole("button", { name: "test-audio.wav" }),
+    ).toBeVisible({ timeout: 5000 });
 
     // 상태 리셋 확인 — Play 버튼 활성화, 시간 0:00
     await expect(page.getByRole("button", { name: "Play" })).toBeEnabled();
-    const timeDisplay = page.locator(".tabular-nums").first();
+    const timeDisplay = page.locator(".text-right.tabular-nums").first();
     await expect(timeDisplay).toHaveText("0:00");
   });
 });

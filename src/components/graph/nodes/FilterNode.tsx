@@ -1,6 +1,7 @@
 "use client";
 
 import { useAudioStore } from "@/store/useAudioStore";
+import { formatHz } from "@/utils/formatting";
 import NodeShell from "./NodeShell";
 import ParamRow from "./ParamRow";
 
@@ -16,9 +17,4 @@ export default function FilterNode() {
       <ParamRow label="Q" value={q.toFixed(2)} />
     </NodeShell>
   );
-}
-
-function formatHz(hz: number): string {
-  if (hz >= 1000) return `${(hz / 1000).toFixed(1)}kHz`;
-  return `${Math.round(hz)}Hz`;
 }

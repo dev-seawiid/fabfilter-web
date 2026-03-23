@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
-  subscribe as peakSubscribe,
-  getSnapshot as peakGetSnapshot,
-  subscribeLevel,
   getLevelSnapshot,
+  getSnapshot as peakGetSnapshot,
+  subscribe as peakSubscribe,
   resetPeakState,
+  subscribeLevel,
 } from "@/hooks/usePeakDetector";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 // ── 순수 계산 함수 (렌더 바깥에서 재사용) ──
 const MIN_DB = -60;
@@ -92,7 +92,12 @@ export default function PeakLED() {
       <button
         onClick={handleClick}
         title={isClipping ? "Click to reset peak" : "No clipping"}
-        className="relative flex h-4 w-4 items-center justify-center focus:outline-none"
+        aria-label={
+          isClipping
+            ? "Peak clipping — click to reset"
+            : "Peak meter — no clipping"
+        }
+        className="relative flex h-4 w-4 items-center justify-center"
         style={{ cursor: isClipping ? "pointer" : "default" }}
       >
         <div

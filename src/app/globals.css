@@ -38,6 +38,26 @@
   filter: drop-shadow(0 0 3px rgba(0, 229, 255, 0.5));
 }
 
+/* ── 전역 focus-visible 스타일 (T058) ── */
+/* Fabfilter 스타일: 시안 링 + 글로우 */
+:focus-visible {
+  outline: 1.5px solid var(--color-accent-cyan, #00e5ff);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+}
+
+/* SVG 요소와 canvas는 outline만 (box-shadow가 잘 안 먹음) */
+svg:focus-visible,
+canvas:focus-visible {
+  box-shadow: none;
+}
+
+/* React Flow 내부 요소는 focus 제거 — 인터랙션 비활성화 상태 */
+.react-flow__node:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 html,
 body {
   max-width: 100vw;

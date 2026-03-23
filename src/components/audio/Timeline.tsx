@@ -1,15 +1,13 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
-import { useAudioStore } from "@/store/useAudioStore";
 import { useAnimationFrame } from "@/hooks/useAnimationFrame";
+import { useAudioStore } from "@/store/useAudioStore";
+import { formatTime } from "@/utils/formatting";
+import { useCallback, useEffect, useRef } from "react";
 
-/** mm:ss 형식으로 변환 */
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
+/** seek step 상수 — useGlobalKeyboard와 공유 */
+export const SEEK_STEP = 5;
+export const SEEK_STEP_SHIFT = 15;
 
 export default function Timeline() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -77,6 +75,30 @@ export default function Timeline() {
     [isActive, duration, seek, syncDOM],
   );
 
+  // 키보드로 seek (Left/Right: ±5초, Shift: ±15초)
+  // rerender-dependencies: getPlaybackInfo()로 지연 읽기하여 currentTime deps 제거
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isActive) return;
+      const step = e.shiftKey ? SEEK_STEP_SHIFT : SEEK_STEP;
+      const { currentTime: time, duration: d } = getPlaybackInfo();
+      let newTime: number | null = null;
+
+      if (e.key === "ArrowRight") {
+        newTime = Math.min(d, time + step);
+      } else if (e.key === "ArrowLeft") {
+        newTime = Math.max(0, time - step);
+      } else {
+        return;
+      }
+
+      e.preventDefault();
+      seek(newTime);
+      syncDOM(newTime);
+    },
+    [isActive, getPlaybackInfo, seek, syncDOM],
+  );
+
   return (
     <div className="flex items-center gap-3">
       {/* 현재 시간 */}
@@ -90,7 +112,15 @@ export default function Timeline() {
       {/* 타임라인 트랙 */}
       <div
         ref={trackRef}
+        role="slider"
+        tabIndex={isActive ? 0 : -1}
+        aria-label="Timeline seek"
+        aria-valuemin={0}
+        aria-valuemax={duration}
+        aria-valuenow={currentTime}
+        aria-valuetext={formatTime(currentTime)}
         onClick={handleSeek}
+        onKeyDown={handleKeyDown}
         className={`bg-surface-700 relative h-1.5 flex-1 cursor-pointer rounded-full transition-colors ${
           !isActive ? "cursor-not-allowed opacity-40" : "hover:bg-surface-600"
         }`}

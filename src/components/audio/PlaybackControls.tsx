@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useAudioStore } from "@/store/useAudioStore";
+import { motion } from "framer-motion";
 
 const pauseIcon = (
   <svg
@@ -51,7 +51,7 @@ export default function PlaybackControls() {
         onClick={handleToggle}
         disabled={isDisabled}
         whileTap={{ scale: 0.92 }}
-        className="group border-surface-600 bg-surface-800 hover:border-accent-cyan/50 hover:bg-surface-700 disabled:hover:border-surface-600 disabled:hover:bg-surface-800 relative flex h-10 w-10 items-center justify-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+        className="group border-surface-600 bg-surface-800 hover:border-accent-cyan/50 hover:bg-surface-700 disabled:hover:border-surface-600 disabled:hover:bg-surface-800 relative flex h-11 w-11 items-center justify-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-30"
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         {/* 글로우 이펙트 */}

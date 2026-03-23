@@ -2,17 +2,10 @@
 
 import { useAudioStore } from "@/store/useAudioStore";
 import Knob from "@/components/ui/Knob";
-
-/** Hz를 사람이 읽기 쉬운 형태로 포맷 */
-function formatHz(hz: number): string {
-  if (hz >= 1000) {
-    return `${(hz / 1000).toFixed(1)}k`;
-  }
-  return `${Math.round(hz)}`;
-}
+import { formatHz } from "@/utils/formatting";
 
 // 모듈 레벨 상수 — 매 render마다 새 함수 생성 방지
-const formatCutoff = (v: number) => `${formatHz(v)}Hz`;
+const formatCutoff = (v: number) => formatHz(v);
 const formatQ = (v: number) => v.toFixed(2);
 const formatGain = (v: number) => `${Math.round(v * 100)}%`;
 

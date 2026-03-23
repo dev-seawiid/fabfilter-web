@@ -28,7 +28,13 @@ export class AudioEngine {
 
   constructor(config: Partial<EngineConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.ctx = new AudioContext();
+
+    // T062: Safari 호환 — webkitAudioContext 폴백
+    const AudioCtx =
+      globalThis.AudioContext ??
+      (globalThis as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    this.ctx = new AudioCtx();
 
     // 고정 노드 생성 — Source 제외 (재생 시마다 새로 생성)
     const analyserPre = this.ctx.createAnalyser();
