@@ -150,9 +150,7 @@ test.describe("Visualization", () => {
     await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
 
     // 오버레이가 없어야 함
-    await expect(
-      page.getByText("Press play to visualize"),
-    ).not.toBeVisible();
+    await expect(page.getByText("Press play to visualize")).not.toBeVisible();
 
     await page.getByRole("button", { name: "Pause" }).click();
   });
@@ -207,8 +205,6 @@ test.describe("Visualization", () => {
     await page.goto("/");
     await uploadAndWait(page, testAudioPath);
 
-    // PeakLED의 텍스트 요소 확인
-    const peakText = page.locator("text=PEAK").or(page.locator("text=dB"));
     // 적어도 하나의 Peak 관련 요소가 존재
     const peakElements = page.locator('[class*="tabular-nums"]');
     await expect(peakElements.first()).toBeVisible();

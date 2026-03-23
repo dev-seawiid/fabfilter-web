@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { useAudioStore } from "@/store/useAudioStore";
 import { useAnimationFrame } from "@/hooks/useAnimationFrame";
 
@@ -20,6 +20,7 @@ export default function Timeline() {
 
   const playbackState = useAudioStore((s) => s.playbackState);
   const duration = useAudioStore((s) => s.duration);
+  const currentTime = useAudioStore((s) => s.currentTime);
   const seek = useAudioStore((s) => s.seek);
   const getPlaybackInfo = useAudioStore((s) => s.getPlaybackInfo);
 
@@ -55,6 +56,11 @@ export default function Timeline() {
     [duration],
   );
 
+  // store의 currentTime이 변경될 때 (seek, pause, loadFile) DOM 동기화
+  useEffect(() => {
+    syncDOM(currentTime);
+  }, [currentTime, syncDOM]);
+
   // 클릭으로 seek
   const handleSeek = useCallback(
     (e: React.MouseEvent) => {
@@ -78,7 +84,7 @@ export default function Timeline() {
         ref={currentTimeRef}
         className="text-text-secondary w-12 text-right text-xs tabular-nums"
       >
-        {formatTime(0)}
+        {formatTime(currentTime)}
       </span>
 
       {/* 타임라인 트랙 */}

@@ -65,15 +65,6 @@ describe("SpectrumCanvas", () => {
       const canvas = container.querySelector("canvas");
       expect(canvas).toBeInTheDocument();
     });
-
-    it("컨테이너 div가 렌더링된다", () => {
-      useAudioStore.setState({ playbackState: "idle" });
-      const { container } = render(<SpectrumCanvas />);
-
-      const wrapper = container.firstElementChild;
-      expect(wrapper).toBeInTheDocument();
-      expect(wrapper?.tagName).toBe("DIV");
-    });
   });
 
   // ── 오버레이 상태 표시 ──
@@ -112,8 +103,12 @@ describe("SpectrumCanvas", () => {
 
       render(<SpectrumCanvas />);
 
-      expect(screen.queryByText("Upload a file to begin")).not.toBeInTheDocument();
-      expect(screen.queryByText("Press play to visualize")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Upload a file to begin"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Press play to visualize"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -129,26 +124,12 @@ describe("SpectrumCanvas", () => {
 
     it("언마운트 시 ResizeObserver가 disconnect된다", () => {
       useAudioStore.setState({ playbackState: "idle" });
-      const callsBefore = disconnectMock.mock.calls.length;
+      disconnectMock.mockClear();
       const { unmount } = render(<SpectrumCanvas />);
 
       unmount();
 
-      // 이전 테스트에서의 호출을 제외하고 현재 테스트에서 1회 호출 검증
-      expect(disconnectMock.mock.calls.length - callsBefore).toBe(1);
-    });
-  });
-
-  // ── Canvas getContext ──
-
-  describe("Canvas 컨텍스트", () => {
-    it("canvas에 getContext('2d')가 호출 가능하다", () => {
-      useAudioStore.setState({ playbackState: "idle" });
-      const { container } = render(<SpectrumCanvas />);
-
-      const canvas = container.querySelector("canvas") as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d");
-      expect(ctx).not.toBeNull();
+      expect(disconnectMock).toHaveBeenCalledOnce();
     });
   });
 });

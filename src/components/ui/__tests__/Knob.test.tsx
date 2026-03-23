@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Knob from "../Knob";
+import Knob, { type KnobProps } from "../Knob";
 
 vi.mock("framer-motion", () => import("@/__mocks__/framer-motion"));
 
@@ -15,6 +15,8 @@ beforeEach(() => {
   }
 });
 
+type RenderKnobOverrides = Omit<Partial<KnobProps>, "onChange">;
+
 describe("Knob", () => {
   const defaultProps = {
     value: 50,
@@ -24,7 +26,7 @@ describe("Knob", () => {
     label: "Test Knob",
   };
 
-  function renderKnob(overrides: Partial<typeof defaultProps> = {}) {
+  function renderKnob(overrides: RenderKnobOverrides = {}) {
     const props = { ...defaultProps, onChange: vi.fn(), ...overrides };
     render(<Knob {...props} />);
     return props;
@@ -40,7 +42,10 @@ describe("Knob", () => {
 
     it("aria-label이 label prop과 일치한다", () => {
       renderKnob({ label: "Cutoff" });
-      expect(screen.getByRole("slider")).toHaveAttribute("aria-label", "Cutoff");
+      expect(screen.getByRole("slider")).toHaveAttribute(
+        "aria-label",
+        "Cutoff",
+      );
     });
 
     it("aria-valuemin/max/now가 올바르다", () => {

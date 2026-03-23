@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { FilterEngine } from "../FilterEngine";
 import {
+  MockAudioContext,
   setupWebAudioMock,
   teardownWebAudioMock,
-  MockAudioContext,
 } from "@/__mocks__/web-audio-api";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { FilterEngine } from "../FilterEngine";
 
 describe("FilterEngine", () => {
   let ctx: MockAudioContext;
@@ -163,30 +163,23 @@ describe("FilterEngine", () => {
     });
   });
 
-  // ── Highpass 이론적 감쇄율 검증 (SC-006) ──
+  // ── getFrequencyResponse passthrough 검증 (SC-006) ──
   //
-  // 2차 Butterworth highpass (Q=0.707)의 이론적 감쇄율:
-  //   - cutoff 주파수에서: -3dB
-  //   - cutoff의 1/2 주파수에서: 약 -10dB ~ -11dB
-  //   - cutoff의 2배 주파수에서: 약 0dB (통과)
-  //
-  // 이 테스트는 mock의 getFrequencyResponse에 이론치를 주입하여
+  // mock에 이론적 highpass 응답을 주입하여
   // FilterEngine이 BiquadFilterNode의 응답을 정확히 전달하는지 검증한다.
 
-  describe("Highpass 감쇄율 이론치 전달 (SC-006)", () => {
-    it("getFrequencyResponse가 BiquadFilterNode의 응답 데이터를 그대로 전달한다", () => {
+  describe("getFrequencyResponse가 BiquadFilterNode 응답을 그대로 전달한다", () => {
+    it("주입된 이론적 highpass 응답이 dB 변환 후에도 정확히 전달된다", () => {
       // 이론적 highpass 응답 시뮬레이션:
       // cutoff=1000Hz, Q=0.707 일 때
       // 500Hz → ~0.25 (-12dB), 1000Hz → ~0.707 (-3dB), 2000Hz → ~1.0 (0dB)
       const theoreticalMag = new Float32Array([0.25, 0.707, 1.0]);
 
       // Mock이 이론 응답을 채우도록 설정
-      (filterNode.getFrequencyResponse as ReturnType<typeof vi.fn>).mockImplementation(
-        (
-          freq: Float32Array,
-          mag: Float32Array,
-          phase: Float32Array,
-        ) => {
+      (
+        filterNode.getFrequencyResponse as ReturnType<typeof vi.fn>
+      ).mockImplementation(
+        (freq: Float32Array, mag: Float32Array, phase: Float32Array) => {
           for (let i = 0; i < freq.length; i++) {
             mag[i] = theoreticalMag[i] ?? 0;
             phase[i] = 0;

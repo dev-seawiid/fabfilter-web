@@ -40,6 +40,10 @@ export function createLogFrequencyArray(
   count = 512,
 ): Float32Array<ArrayBuffer> {
   const arr = new Float32Array(count);
+  if (count <= 1) {
+    if (count === 1) arr[0] = startHz;
+    return arr;
+  }
   const logStart = Math.log10(startHz);
   const logEnd = Math.log10(endHz);
   const step = (logEnd - logStart) / (count - 1);

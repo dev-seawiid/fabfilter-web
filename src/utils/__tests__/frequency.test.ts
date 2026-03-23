@@ -25,7 +25,10 @@ describe("hzToLogX", () => {
 
   it("1000Hz가 올바른 로그 위치에 매핑된다", () => {
     // log10(1000)=3, range=(4.301-1.301)=3 → (3-1.301)/3 ≈ 0.566
-    const expected = ((Math.log10(1000) - Math.log10(20)) / (Math.log10(20000) - Math.log10(20))) * width;
+    const expected =
+      ((Math.log10(1000) - Math.log10(20)) /
+        (Math.log10(20000) - Math.log10(20))) *
+      width;
     expect(hzToLogX(1000, width)).toBeCloseTo(expected, 5);
   });
 
@@ -129,12 +132,10 @@ describe("createLogFrequencyArray", () => {
     expect(arr).toBeInstanceOf(Float32Array);
   });
 
-  it("count=1이면 step이 Infinity가 되어 NaN을 반환한다 (엣지 케이스)", () => {
+  it("count=1이면 startHz를 반환한다", () => {
     const arr = createLogFrequencyArray(20, 20000, 1);
     expect(arr.length).toBe(1);
-    // count=1 → step = (logEnd-logStart) / (1-1) = Infinity
-    // arr[0] = 10^(logStart + 0*Infinity) = 10^NaN = NaN
-    expect(arr[0]).toBeNaN();
+    expect(arr[0]).toBeCloseTo(20, 1);
   });
 });
 
@@ -159,6 +160,6 @@ describe("binToHz", () => {
 
   it("정수가 아닌 결과도 정확히 반환한다", () => {
     const result = binToHz(3, 44100, 2048);
-    expect(result).toBeCloseTo(3 * 44100 / 2048, 5);
+    expect(result).toBeCloseTo((3 * 44100) / 2048, 5);
   });
 });

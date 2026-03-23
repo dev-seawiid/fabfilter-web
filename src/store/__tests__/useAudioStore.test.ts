@@ -233,19 +233,18 @@ describe("useAudioStore", () => {
   // ── onEnded 통합 ──
 
   describe("onEnded → store 리셋 통합 (FR-013)", () => {
-    it("재생 완료 시 store가 stopped/currentTime=0으로 리셋된다", async () => {
+    it("재생 완료 시 engine.onEnded 콜백을 통해 store가 stopped/currentTime=0으로 리셋된다", async () => {
       const file = new File(["dummy"], "test.wav", { type: "audio/wav" });
       await useAudioStore.getState().loadFile(file);
       await useAudioStore.getState().play();
 
       expect(useAudioStore.getState().playbackState).toBe("playing");
 
-      // 엔진의 onEnded 시뮬레이션: useAudioStore.setState 직접 호출
-      // (getOrCreateEngine에서 engine.onEnded로 등록한 콜백이 이것을 수행)
-      useAudioStore.setState({
-        playbackState: "stopped",
-        currentTime: 0,
-      });
+      // 실제 engine의 source.onended를 트리거하여 통합 경로 검증
+      const engine = useAudioStore.getState().getEngine();
+      const source = engine.graphNodes.source;
+      expect(source).not.toBeNull();
+      (source as unknown as { onended: (() => void) | null }).onended?.();
 
       expect(useAudioStore.getState().playbackState).toBe("stopped");
       expect(useAudioStore.getState().currentTime).toBe(0);
