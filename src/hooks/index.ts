@@ -1,1 +1,1 @@
-// Custom React hooks (useAnimationFrame, useSpectrumData)
+// Custom React hooks (useAnimationFrame, useSpectrumRenderer)

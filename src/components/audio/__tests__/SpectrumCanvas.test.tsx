@@ -7,10 +7,9 @@ import { useAudioStore } from "@/store/useAudioStore";
 
 vi.mock("framer-motion", () => import("@/__mocks__/framer-motion"));
 
-// useSpectrumData mock — 기본적으로 null 반환, 테스트별로 오버라이드
-const mockSpectrumData = vi.fn().mockReturnValue(null);
-vi.mock("@/hooks/useSpectrumData", () => ({
-  useSpectrumData: () => mockSpectrumData(),
+// useSpectrumRenderer mock — rAF 기반 Canvas 드로잉을 테스트 환경에서 비활성화
+vi.mock("@/hooks/useSpectrumRenderer", () => ({
+  useSpectrumRenderer: vi.fn(),
 }));
 
 // ResizeObserver mock (jsdom에 없음)
@@ -51,7 +50,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
-  mockSpectrumData.mockReturnValue(null);
 });
 
 describe("SpectrumCanvas", () => {
@@ -93,14 +91,6 @@ describe("SpectrumCanvas", () => {
 
     it("playing 상태에서 오버레이가 표시되지 않는다", () => {
       useAudioStore.setState({ playbackState: "playing" });
-      mockSpectrumData.mockReturnValue({
-        preData: new Float32Array(1024),
-        postData: new Float32Array(1024),
-        postPeak: 0,
-        binCount: 1024,
-        sampleRate: 44100,
-      });
-
       render(<SpectrumCanvas />);
 
       expect(

@@ -55,17 +55,37 @@ const initialState: AudioState = {
   },
 };
 
-/** 싱글턴 AudioEngine 인스턴스 — 스토어 외부에서 관리 */
-let engine: AudioEngine | null = null;
+/**
+ * 싱글턴 AudioEngine — globalThis에 저장하여 HMR 시에도 인스턴스 유지.
+ *
+ * Next.js 개발 환경에서 HMR이 발생하면 모듈 스코프 변수(`let engine`)가
+ * 초기화되어 이전 AudioContext가 해제되지 않은 채 새 인스턴스가 생길 수 있다.
+ * globalThis에 저장하면 모듈 재평가와 무관하게 동일 인스턴스를 참조한다.
+ */
+const GLOBAL_KEY = "__fabfilter_audio_engine__" as const;
+
+function getGlobalEngine(): AudioEngine | null {
+  return (
+    ((globalThis as Record<string, unknown>)[
+      GLOBAL_KEY
+    ] as AudioEngine | null) ?? null
+  );
+}
+
+function setGlobalEngine(eng: AudioEngine | null): void {
+  (globalThis as Record<string, unknown>)[GLOBAL_KEY] = eng;
+}
 
 /** 테스트 전용 — 엔진 싱글턴 리셋 */
 export function __resetEngineForTesting(): void {
-  engine = null;
+  setGlobalEngine(null);
 }
 
 function getOrCreateEngine(): AudioEngine {
+  let engine = getGlobalEngine();
   if (!engine) {
     engine = new AudioEngine();
+    setGlobalEngine(engine);
 
     // T025: 재생 완료 시 스토어 상태 리셋
     engine.onEnded(() => {
