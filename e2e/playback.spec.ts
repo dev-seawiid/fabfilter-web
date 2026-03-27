@@ -1,42 +1,7 @@
 import { expect, test } from "@playwright/test";
 import fs from "fs";
 import path from "path";
-
-// 테스트용 WAV 파일 생성 (지정 초, 44100Hz, 모노, 16bit)
-function createTestWavFile(outputPath: string, durationSec = 1): void {
-  const sampleRate = 44100;
-  const numChannels = 1;
-  const bitsPerSample = 16;
-  const numSamples = sampleRate * durationSec;
-  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
-  const headerSize = 44;
-
-  const buffer = Buffer.alloc(headerSize + dataSize);
-
-  // WAV header
-  buffer.write("RIFF", 0);
-  buffer.writeUInt32LE(headerSize + dataSize - 8, 4);
-  buffer.write("WAVE", 8);
-  buffer.write("fmt ", 12);
-  buffer.writeUInt32LE(16, 16); // fmt chunk size
-  buffer.writeUInt16LE(1, 20); // PCM
-  buffer.writeUInt16LE(numChannels, 22);
-  buffer.writeUInt32LE(sampleRate, 24);
-  buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28);
-  buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32);
-  buffer.writeUInt16LE(bitsPerSample, 34);
-  buffer.write("data", 36);
-  buffer.writeUInt32LE(dataSize, 40);
-
-  // 440Hz 사인파 생성
-  for (let i = 0; i < numSamples; i++) {
-    const sample = Math.sin((2 * Math.PI * 440 * i) / sampleRate);
-    const intSample = Math.round(sample * 32767);
-    buffer.writeInt16LE(intSample, headerSize + i * 2);
-  }
-
-  fs.writeFileSync(outputPath, buffer);
-}
+import { createSineWav } from "./helpers/create-test-wav";
 
 /** 헬퍼: 파일 업로드 후 디코딩 완료 대기 */
 async function uploadAndWait(
@@ -58,8 +23,8 @@ test.describe("Playback Flow", () => {
   const testAudio3sPath = path.join(__dirname, "test-audio-3s.wav");
 
   test.beforeAll(() => {
-    createTestWavFile(testAudioPath, 1);
-    createTestWavFile(testAudio3sPath, 3);
+    createSineWav(testAudioPath, 440, 1);
+    createSineWav(testAudio3sPath, 440, 3);
   });
 
   test.afterAll(() => {

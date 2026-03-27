@@ -1,44 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "path";
 import fs from "fs";
-
-// ── 테스트용 WAV 생성 ──
-
-function createTestWav(
-  outputPath: string,
-  frequency = 440,
-  durationSec = 3,
-): void {
-  const sampleRate = 44100;
-  const numChannels = 1;
-  const bitsPerSample = 16;
-  const numSamples = sampleRate * durationSec;
-  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
-  const headerSize = 44;
-
-  const buffer = Buffer.alloc(headerSize + dataSize);
-
-  buffer.write("RIFF", 0);
-  buffer.writeUInt32LE(headerSize + dataSize - 8, 4);
-  buffer.write("WAVE", 8);
-  buffer.write("fmt ", 12);
-  buffer.writeUInt32LE(16, 16);
-  buffer.writeUInt16LE(1, 20);
-  buffer.writeUInt16LE(numChannels, 22);
-  buffer.writeUInt32LE(sampleRate, 24);
-  buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28);
-  buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32);
-  buffer.writeUInt16LE(bitsPerSample, 34);
-  buffer.write("data", 36);
-  buffer.writeUInt32LE(dataSize, 40);
-
-  for (let i = 0; i < numSamples; i++) {
-    const sample = Math.sin((2 * Math.PI * frequency * i) / sampleRate);
-    buffer.writeInt16LE(Math.round(sample * 32767), headerSize + i * 2);
-  }
-
-  fs.writeFileSync(outputPath, buffer);
-}
+import { createSineWav, createWhiteNoiseWav } from "./helpers/create-test-wav";
 
 async function uploadAndWait(
   page: import("@playwright/test").Page,
@@ -89,7 +52,7 @@ test.describe("Visualization", () => {
   const testAudioPath = path.join(__dirname, "test-viz-audio.wav");
 
   test.beforeAll(() => {
-    createTestWav(testAudioPath, 440, 5);
+    createSineWav(testAudioPath, 440, 5);
   });
 
   test.afterAll(() => {
@@ -140,6 +103,38 @@ test.describe("Visualization", () => {
     expect(filledRatio).toBeGreaterThan(0);
 
     await page.getByRole("button", { name: "Pause" }).click();
+  });
+
+  test("재생 중 스펙트럼이 매 프레임 업데이트된다 (정지 화면이 아님)", async ({
+    page,
+  }) => {
+    // 화이트 노이즈는 매 프레임 다른 FFT 스펙트럼을 생성하므로
+    // Canvas가 실시간으로 업데이트되는지 검증할 수 있다.
+    // (사인파는 스펙트럼이 일정하여 EMA 수렴 후 Canvas가 동일해짐)
+    const noisePath = path.join(__dirname, "test-viz-noise.wav");
+    createWhiteNoiseWav(noisePath, 3);
+
+    try {
+      await page.goto("/");
+      await uploadAndWait(page, noisePath);
+
+      await page.getByRole("button", { name: "Play" }).click();
+      await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+      await page.waitForTimeout(500);
+
+      // 시점 A 스냅샷
+      const snapshotA = await getCanvasSnapshot(page);
+
+      // 300ms 후 시점 B 스냅샷 — 화이트 노이즈 스펙트럼은 매 프레임 달라야 함
+      await page.waitForTimeout(300);
+      const snapshotB = await getCanvasSnapshot(page);
+
+      expect(snapshotA).not.toBe(snapshotB);
+
+      await page.getByRole("button", { name: "Pause" }).click();
+    } finally {
+      if (fs.existsSync(noisePath)) fs.unlinkSync(noisePath);
+    }
   });
 
   test("재생 중 오버레이 메시지가 사라진다", async ({ page }) => {

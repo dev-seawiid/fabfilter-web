@@ -1,41 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "path";
 import fs from "fs";
-
-// ── 테스트용 WAV 생성 (화이트 노이즈 — 전 주파수 대역 활성) ──
-
-function createWhiteNoiseWav(outputPath: string, durationSec = 10): void {
-  const sampleRate = 44100;
-  const numChannels = 1;
-  const bitsPerSample = 16;
-  const numSamples = sampleRate * durationSec;
-  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
-  const headerSize = 44;
-
-  const buffer = Buffer.alloc(headerSize + dataSize);
-
-  buffer.write("RIFF", 0);
-  buffer.writeUInt32LE(headerSize + dataSize - 8, 4);
-  buffer.write("WAVE", 8);
-  buffer.write("fmt ", 12);
-  buffer.writeUInt32LE(16, 16);
-  buffer.writeUInt16LE(1, 20);
-  buffer.writeUInt16LE(numChannels, 22);
-  buffer.writeUInt32LE(sampleRate, 24);
-  buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28);
-  buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32);
-  buffer.writeUInt16LE(bitsPerSample, 34);
-  buffer.write("data", 36);
-  buffer.writeUInt32LE(dataSize, 40);
-
-  // 화이트 노이즈 — 스펙트럼 전 대역에서 시각화가 활성화됨
-  for (let i = 0; i < numSamples; i++) {
-    const sample = (Math.random() * 2 - 1) * 0.5; // -0.5 ~ 0.5
-    buffer.writeInt16LE(Math.round(sample * 32767), headerSize + i * 2);
-  }
-
-  fs.writeFileSync(outputPath, buffer);
-}
+import { createWhiteNoiseWav } from "./helpers/create-test-wav";
 
 async function uploadAndWait(
   page: import("@playwright/test").Page,
