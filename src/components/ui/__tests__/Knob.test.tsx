@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import Knob, { type KnobProps } from "../Knob";
 
 vi.mock("framer-motion", () => import("@/__mocks__/framer-motion"));
@@ -293,6 +293,69 @@ describe("Knob", () => {
       expect(props.onChange).toHaveBeenCalled();
       const calledValue = props.onChange.mock.calls[0][0];
       expect(calledValue).toBe(0); // min=0
+    });
+
+    it("logarithmic 모드에서 min값이면 노브가 왼쪽 끝(아크 없음), max값이면 오른쪽 끝(풀 아크)이어야 한다", () => {
+      // Q 노브 범위: min=0.1, max=18, logarithmic=true
+      const { rerender } = render(
+        <Knob
+          value={0.1}
+          min={0.1}
+          max={18}
+          onChange={vi.fn()}
+          label="Q"
+          logarithmic
+        />,
+      );
+
+      const slider = screen.getByRole("slider");
+
+      // min값(0.1)일 때 — 아크가 없어야 함 (normalized=0 → valuePath=null)
+      const svgPaths = slider.querySelectorAll("path");
+      const arcPaths = Array.from(svgPaths).filter(
+        (p) => p.getAttribute("stroke-linecap") === "round",
+      );
+      // 트랙 아크(배경)만 존재하고, 값 아크(채워진 부분)는 없어야 함
+      expect(arcPaths.length).toBe(1);
+
+      // max값(18)으로 변경 — 풀 아크가 렌더링되어야 함
+      rerender(
+        <Knob
+          value={18}
+          min={0.1}
+          max={18}
+          onChange={vi.fn()}
+          label="Q"
+          logarithmic
+        />,
+      );
+
+      const arcPathsAfter = Array.from(slider.querySelectorAll("path")).filter(
+        (p) => p.getAttribute("stroke-linecap") === "round",
+      );
+      // 트랙 아크 + 값 아크 = 2개
+      expect(arcPathsAfter.length).toBe(2);
+    });
+
+    it("logarithmic 모드에서 중간값이면 노브가 중간 위치에 있어야 한다", () => {
+      // Q=4일 때 normalized ≈ 0.72 → 아크가 존재해야 함
+      render(
+        <Knob
+          value={4}
+          min={0.1}
+          max={18}
+          onChange={vi.fn()}
+          label="Q"
+          logarithmic
+        />,
+      );
+
+      const slider = screen.getByRole("slider");
+      const arcPaths = Array.from(slider.querySelectorAll("path")).filter(
+        (p) => p.getAttribute("stroke-linecap") === "round",
+      );
+      // 트랙 아크 + 값 아크 = 2개 (값이 min보다 크므로 아크가 렌더링됨)
+      expect(arcPaths.length).toBe(2);
     });
   });
 });

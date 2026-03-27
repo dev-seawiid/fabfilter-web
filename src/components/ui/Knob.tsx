@@ -34,7 +34,8 @@ function deg2rad(deg: number) {
 
 /**
  * 로그 스케일의 실효 하한.
- * min=0일 때는 20Hz부터 로그 매핑하고, normalized=0에서 min(0)을 반환한다.
+ * min=0일 때만 적용 — 0Hz는 log(0)=-Infinity이므로 20Hz부터 매핑한다.
+ * min>0이면 min 자체를 로그 하한으로 사용한다.
  */
 const LOG_FLOOR = 20;
 
@@ -46,7 +47,7 @@ function valueToNormalized(
   logarithmic: boolean,
 ): number {
   if (logarithmic) {
-    const effectiveMin = Math.max(min, LOG_FLOOR);
+    const effectiveMin = min > 0 ? min : LOG_FLOOR;
     if (value <= effectiveMin) return 0;
     const logMin = Math.log(effectiveMin);
     const logMax = Math.log(max);
@@ -64,7 +65,7 @@ function normalizedToValue(
 ): number {
   if (logarithmic) {
     if (normalized <= 0) return min;
-    const effectiveMin = Math.max(min, LOG_FLOOR);
+    const effectiveMin = min > 0 ? min : LOG_FLOOR;
     const logMin = Math.log(effectiveMin);
     const logMax = Math.log(max);
     return Math.exp(logMin + normalized * (logMax - logMin));
